@@ -46,7 +46,7 @@
     "@kitajs/html": "^4.2.13",
     "ignore": "^7.0.14",
     "picomatch": "^4.0.7",
-    "typebox": "1.3.27"
+    "typebox": "1.4.3"
   },
   "devDependencies": {
     "@arthurfiorette/biomejs-config": "^2.0.1",
