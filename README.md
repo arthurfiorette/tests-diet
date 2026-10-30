@@ -120,7 +120,9 @@ tests-diet delete --dry-run
 tests-diet delete
 ```
 
-It only changes files that are unchanged since the run, and skips anything below medium confidence. Use `--only <folder>` to go one folder at a time.
+It only changes files that are unchanged since the run, and skips anything below medium confidence. Use `--only <folder>` to go one folder at a time. The remaining findings of each pruned file move to their new line numbers, so the report keeps its merges and rewrites.
+
+If you removed tests some other way (by hand, an older tests-diet, or an agent that also dropped unused imports), `tests-diet rebase` does the same for every changed file whose remaining cases are untouched. Files where a case was renamed, edited or added are classified again by the next `run`.
 
 Merges and rewrites need an agent. Install the tests-diet skill and ask your agent to apply `.tests-diet/tests-diet.md`:
 

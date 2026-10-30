@@ -1,6 +1,7 @@
 import {
   appendFileSync,
   closeSync,
+  copyFileSync,
   existsSync,
   mkdirSync,
   openSync,
@@ -105,6 +106,13 @@ export class Store {
     const tmp = `${this.statePath}.${process.pid}.tmp`;
     writeFileSync(tmp, `${JSON.stringify(state, null, 2)}\n`);
     renameSync(tmp, this.statePath);
+  }
+
+  /** Copies `state.json` to `state.<timestamp>.json`; returns the copy's path. */
+  backupState(): string {
+    const copy = join(this.dir, `state.${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
+    copyFileSync(this.statePath, copy);
+    return copy;
   }
 
   /** Latest accepted report per path. */

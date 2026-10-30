@@ -11,6 +11,7 @@ import {
   type ThinkingSetting
 } from './config.js';
 import { LiveView, Progress } from './progress.js';
+import { rebaseStale } from './rebase.js';
 import { buildReport, writeReports } from './report.js';
 import { preparePlan, run } from './runner.js';
 import { CONFIDENCE, type Confidence, type LanguagePreset } from './types.js';
@@ -24,6 +25,8 @@ Usage:
   tests-diet report  [options]   rewrite tests-diet.{json,md,html} from the stored run
   tests-diet delete  [options]   apply the report: delete files and \`delete\` ranges
                                  (--dry-run to preview, --min-confidence <level>, --only <prefix>)
+  tests-diet rebase  [options]   carry reports over to files changed only by removed cases
+                                 (after deleting tests or cleaning imports by hand)
 
 Discovery and grouping (stored in the plan; changing them needs --replan):
   --include <glob>          only consider matching files (repeatable)
@@ -109,7 +112,7 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
     process.stdout.write(HELP);
     return 0;
   }
-  if (!command || !['plan', 'run', 'status', 'report', 'delete'].includes(command)) {
+  if (!command || !['plan', 'run', 'status', 'report', 'delete', 'rebase'].includes(command)) {
     process.stderr.write(`${command ? `Unknown command "${command}".\n\n` : ''}${HELP}`);
     return 1;
   }
@@ -278,11 +281,36 @@ export async function main(argv = process.argv.slice(2)): Promise<number> {
       process.stdout.write(
         `\n${dryRun ? 'Would delete' : 'Deleted'} ${result.deletedFiles.length} files and prune ${result.prunedFiles.length} files, ${result.removedLines} lines (findings at ${minConfidence} confidence or above).\n`
       );
+      if (!dryRun && result.prunedFiles.length) {
+        // The pruned files' hashes changed: without this their merges and rewrites would drop
+        // out of the report as stale.
+        const pruned = new Set(result.prunedFiles.map((f) => f.path));
+        const after = preparePlan(config, { write: false }).files.filter((f) => pruned.has(f.path));
+        const { rebased, failed } = rebaseStale(after, plan.store.readResults());
+        for (const report of rebased) plan.store.appendResult(report);
+        process.stdout.write(
+          `Carried ${rebased.length} reports over to the pruned files${failed.length ? `; ${failed.length} will be classified again by the next run` : ''}.\n`
+        );
+      }
       if (!dryRun && (result.deletedFiles.length || result.prunedFiles.length)) {
         process.stdout.write(
           `Next: remove imports, helpers and fixtures left unused, then run the formatter, linter, type checker and tests.${result.leftForAgent ? ` ${result.leftForAgent} merge/rewrite findings remain in tests-diet.md for an agent.` : ''}\n`
         );
       }
+      return 0;
+    }
+    case 'rebase': {
+      const plan = preparePlan(config, { write: false });
+      const { rebased, failed } = rebaseStale(plan.files, plan.store.readResults());
+      for (const report of rebased) plan.store.appendResult(report);
+      for (const path of failed) {
+        process.stdout.write(
+          `changed ${path} (cases renamed, edited or added; classified again by the next run)\n`
+        );
+      }
+      process.stdout.write(
+        `\nCarried ${rebased.length} reports over to their changed files; ${failed.length} could not be.\n`
+      );
       return 0;
     }
     default: {
@@ -325,7 +353,12 @@ function ensureCleanWorkTree(root: string, outDir: string, force: boolean) {
     return;
   }
   const out = outDir.replace(/^\.\//, '').replace(/\/$/, '');
-  const dirty = status.split('\n').filter((line) => line.trim() && !line.slice(3).startsWith(out));
+  // The config file changes no line range, and is often left untracked while trying settings.
+  const dirty = status
+    .split('\n')
+    .filter(
+      (line) => line.trim() && !line.slice(3).startsWith(out) && line.slice(3) !== CONFIG_FILE
+    );
   if (dirty.length && !force) {
     throw new Error(
       `The git work tree has ${dirty.length} uncommitted change(s). Commit or stash them first, or pass --force.`

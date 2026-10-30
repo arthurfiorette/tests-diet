@@ -65,6 +65,8 @@ export function preparePlan(config: Config, options: { replan?: boolean; write: 
   });
   if (options.write) {
     store.init();
+    // The old state holds per-group usage and session paths that a regroup cannot rebuild.
+    if (options.replan && store.exists()) store.backupState();
     store.writeState(state);
   }
   return { files, groups, state, store };
