@@ -1,0 +1,14 @@
+# whitelist approach
+
+*
+
+!LICENSE
+!README.md
+!assets/
+!assets/**
+!bin/
+!bin/**
+!dist/
+!dist/**
+!skills/
+!skills/**
