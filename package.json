@@ -1,6 +1,6 @@
 {
   "name": "tests-diet",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Find the tests that are not worth their CI cost, with a pool of pi agents",
   "keywords": [
     "tests",
