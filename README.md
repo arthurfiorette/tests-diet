@@ -16,18 +16,31 @@
 
 # tests-diet
 
-**Spawn a pool of [pi](https://pi.dev) agents to find the tests in your repository that are not worth keeping.**
+**Spawn a pool of [Pi](https://pi.dev) agents to find the tests in your repository that are not worth keeping.**
 
 Coding agents write a test for every change, so test suites grow faster than the protection they give, and every test costs CI time on every run. tests-diet hands your test files to a pool of agents. Each agent reads the tests and the code they cover, then marks every test case to keep, delete, merge or rewrite. You review the result in your browser and apply it with one command.
 
-A test stays only if 3 of these 4 are true: a break would be costly, nothing else would catch it, the code is likely to break, and the test is cheap to run.
+A test stays only if 3 of these 4 are true: a break would be costly, nothing else would catch it, the code is likely to break, and the test is cheap to run. Take this one:
+
+```tsx
+it('renders with default styling classes', () => {
+  render(<Card data-testid="card" />);
+  const card = screen.getByTestId('card');
+  expect(card).toHaveClass('rounded-xl');
+  expect(card).toHaveClass('border');
+  expect(card).toHaveClass('bg-bg-primary');
+  expect(card).toHaveClass('shadow-sm');
+});
+```
+
+It passes, it is fast, and it protects nothing. It only fails when someone changes the Card's style on purpose, and then the fix is to change the test the same way. A wrong style is visible the moment you open the page. The same goes for any test whose expected values are copied from the code, such as exact SQL, a mapping table or the order of calls. Agents write tests like this all the time, and tests-diet deletes them.
 
 Use the CLI to clean up the tests you have today, then install the writing-tests skill so your agents stop adding new ones.
 
 > [!WARNING]
 > Every test file, and any code the agents read, is sent to your model provider. Start with a small run to see what a full one will cost.
 
-You need Node.js 24.16+, git, and pi set up with a model you can use.
+You need Node.js 24.16+, git, and Pi set up with a model you can use.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/arthurfiorette/tests-diet/main/images/readme-terminal.png" alt="tests-diet run showing each agent's group, files reported, turns, tokens, cost and current tool call" />
@@ -53,7 +66,7 @@ Create `tests-diet.config.json` at the root of the repository you want to audit:
 }
 ```
 
-The model can be any model your pi setup knows. The instructions file is optional: write your own rules there, like areas where every test stays. Your editor shows every other option as you type.
+The model can be any model your Pi setup knows. The instructions file is optional: write your own rules there, like areas where every test stays. Your editor shows every other option as you type.
 
 Check what will be audited, without calling a model:
 
@@ -135,7 +148,7 @@ All settings live in `tests-diet.config.json`. With the `$schema` line, your edi
 
 | Option           | Flag              | Default         | Description                                                                                            |
 | ---------------- | ----------------- | --------------- | ------------------------------------------------------------------------------------------------------ |
-| `model`          | `--model`         | your pi default | Model the agents use.                                                                                  |
+| `model`          | `--model`         | your Pi default | Model the agents use.                                                                                  |
 | `thinking`       | `--thinking`      | `low`           | Thinking level, from off to max.                                                                       |
 | `concurrency`    | `--concurrency`   | `32`            | Agents running at once. Lower it if your provider rate-limits you.                                     |
 | `instructions`   | `--instructions`  |                 | Markdown file with your own rules.                                                                     |
@@ -149,9 +162,9 @@ All settings live in `tests-diet.config.json`. With the `$schema` line, your edi
 | `extraLanguages` | `--match`         |                 | Adds languages.                                                                                        |
 | `mcpServers`     | `--mcp-config`    |                 | MCP servers for the agents.                                                                            |
 | `tools`          | `--tools`         |                 | Extra tools the agents may call.                                                                       |
-| `extensions`     | `--extension`     |                 | Extra pi extensions.                                                                                   |
-| `agentDir`       | `--agent-dir`     | pi's own        | pi config folder for the agents.                                                                       |
-| `trustProject`   | `--trust-project` | `false`         | Load the audited project's own pi settings.                                                            |
+| `extensions`     | `--extension`     |                 | Extra Pi extensions.                                                                                   |
+| `agentDir`       | `--agent-dir`     | Pi's own        | Pi config folder for the agents.                                                                       |
+| `trustProject`   | `--trust-project` | `false`         | Load the audited project's own Pi settings.                                                            |
 | `maxRejections`  |                   | `3`             | Rejected reports per file before giving up on it.                                                      |
 | `maxIdleTurns`   |                   | `25`            | Agent turns without progress before stopping its session.                                              |
 | `transport`      |                   | `sse`           | Connection type to the provider.                                                                       |
@@ -179,7 +192,7 @@ tests-diet finds tests in JavaScript, TypeScript, Python, Rust, Go, Java, Kotlin
 
 ## Recommended: Serena
 
-The agents run with your own pi setup, but they only get read-only tools and never load the audited project's agent files or your personal MCP servers.
+The agents run with your own Pi setup, but they only get read-only tools and never load the audited project's agent files or your personal MCP servers.
 
 [Serena](https://github.com/oraios/serena) lets them find a function and everything that uses it, which makes checking whether a behavior is already tested faster and more accurate than grep. Start one shared server:
 

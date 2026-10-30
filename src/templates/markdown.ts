@@ -30,7 +30,7 @@ function renderBody(data: ReportData): string {
     '## How to apply',
     '',
     '1. Run `tests-diet delete --dry-run`, then `tests-diet delete`: it removes `delete_file` files and every `delete` range (only in files unchanged since they were reported). Or by hand: delete `delete_file` files, and remove the `delete` ranges in the order listed (bottom-up within each file, so earlier line numbers stay valid).',
-    '2. For each "merge into one test" group, find its cases by test name and replace them with a single test (a table, or one flow) that keeps every assertion that matters; groups whose "covered by" names cases in other files are combined across those files.',
+    '2. For each "merge into one test" group, find its cases by test name and replace them with a single test (a table, or one flow) that keeps every assertion that matters; groups whose "covered by" names cases in other files are combined across those files. The merged test must pass the value bar of the writing-tests skill; drop cases that add nothing to it.',
     '3. Leave `rewrite` entries for a follow-up unless asked.',
     '4. Remove what became unused: imports, helpers, fixtures, mocks, production exports or flags only those tests used.',
     '5. Run the formatter, linter, type checker and the affected test suites. A kept test failing means a range was wrong: restore it.',

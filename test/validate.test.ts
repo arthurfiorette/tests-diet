@@ -53,6 +53,15 @@ describe('checkReport', () => {
     assert.deepEqual(errorsOf([submitted({}), subtracts]), []);
   });
 
+  test('keeps the only proof of a costly behavior below the bar', () => {
+    const soleProof = submitted({
+      action: 'keep',
+      category: 'VALUABLE',
+      bar: { costly: true, silent: true, likely: false, cheap: false }
+    });
+    assert.deepEqual(errorsOf([soleProof, subtracts]), []);
+  });
+
   test('fixes mechanical slips instead of rejecting them', () => {
     const withEnds: TestFile = {
       ...file,
@@ -129,6 +138,35 @@ describe('checkReport', () => {
       'a costly delete without coveredBy',
       [submitted({ bar: { costly: true, silent: false, likely: false, cheap: true } }), subtracts],
       /deleting a costly case needs coveredBy/
+    ],
+    [
+      'a keep below the bar that is costly but not the only proof',
+      [
+        submitted({
+          action: 'keep',
+          category: 'VALUABLE',
+          bar: { costly: true, silent: false, likely: false, cheap: true }
+        }),
+        subtracts
+      ],
+      /costly and silent/
+    ],
+    [
+      'a keep of a never-write pattern',
+      [
+        submitted({
+          action: 'keep',
+          category: 'TAUT',
+          bar: { costly: true, silent: true, likely: true, cheap: true }
+        }),
+        subtracts
+      ],
+      /TAUT is not kept/
+    ],
+    [
+      'a rewrite of a LOW_VALUE case',
+      [submitted({ action: 'rewrite', category: 'LOW_VALUE' }), subtracts],
+      /LOW_VALUE fails the bar/
     ],
     [
       'a keep with too few bar answers',

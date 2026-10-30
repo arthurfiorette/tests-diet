@@ -16,9 +16,18 @@ it('builds the prompt with the guard rails', () => {
   expect(prompt).toContain('Never create a second quiz');
   expect(prompt).toContain('Answer in the user language');
 });
+
+it('renders with default styling classes', () => {
+  render(<Card data-testid="card" />);
+  const card = screen.getByTestId('card');
+  expect(card).toHaveClass('rounded-xl');
+  expect(card).toHaveClass('border');
+  expect(card).toHaveClass('bg-bg-primary');
+  expect(card).toHaveClass('shadow-sm');
+});
 ```
 
-Changing the literal on purpose only means changing the test the same way.
+Each test copies a literal from the code. Changing the literal on purpose only means changing the test the same way, and nothing else makes it fail: it catches no bug, it just doubles every edit.
 
 ### `TYPE`: what the compiler already checks
 
@@ -130,6 +139,31 @@ e2e/rename-and-delete-tag.spec.ts creates a tag, renames it, reloads, deletes it
 ```
 
 The first is a strict subset of the second.
+
+```ts
+describe('updateCampaign', () => {
+  it('saves the subject', ...);
+  it('null clears the subject', ...);
+  it('omitted keeps the subject', ...);
+  it('saves the preheader', ...);
+  it('null clears the preheader', ...);
+  it('omitted keeps the preheader', ...);
+  // ...the same three for every new column
+});
+```
+
+The three cases test the update helper, not the columns. One table over the columns covers them, and passthrough columns need no case at all.
+
+```ts
+it('getCampaign rejects another owner', ...);
+it('getCampaign returns not found for a deleted campaign', ...);
+it('updateCampaign rejects another owner', ...);
+it('updateCampaign returns not found for a deleted campaign', ...);
+it('deleteCampaign rejects another owner', ...);
+// ...the same pair for every method
+```
+
+Isolation is costly, so it needs a test, but one table over the service's methods proves it once.
 
 ### `FLAKY` and `DEAD`
 

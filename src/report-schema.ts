@@ -70,7 +70,7 @@ const FindingParams = Type.Object({
   ),
   confidence: stringEnum(
     CONFIDENCE,
-    'How likely a senior reviewer reading the same code agrees. high when the code settles it; medium only when a reviewer could reasonably disagree.'
+    'How likely a senior reviewer reading the same code agrees: very_high (nobody would argue), high (settled, one detail to check), medium (a reviewer could reasonably disagree), low (depends on context you could not see), very_low (a guess).'
   )
 });
 

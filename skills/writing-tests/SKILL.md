@@ -1,6 +1,6 @@
 ---
 name: writing-tests
-description: Read BEFORE writing, adding, changing or reviewing any test (unit, integration, component, e2e). Decides if it should exist, its layer and shape.
+description: Read BEFORE writing, adding, changing or reviewing any test (unit, integration, component, e2e), including tests added while implementing a feature or fixing a bug. Decides if it should exist, its layer and shape.
 ---
 
 # Writing tests
@@ -11,7 +11,9 @@ Existing tests are not a style reference. Suites written by coding agents tend t
 
 ## Value bar
 
-A test may exist only if at least 3 of these 4 hold:
+First ask what a failure would mean: a mistake, or a decision. A test whose expected values are copied from the code (the class list, the SQL text, the mapping table, the order of calls) can only fail when someone changes that code on purpose, and the fix is always the same edit in the test. It catches no mistake, whatever it asserts. A test whose expected values come from the requirement (the price for this cart, the tenant that must not see this row) fails when the code gets the rule wrong.
+
+Then, a test may exist only if at least 3 of these 4 hold:
 
 |#|Question|Yes when|
 |-|-|-|
@@ -24,18 +26,18 @@ Worked example: a 70-line test of a "today in the business time zone" helper. It
 
 Same for UI: a test that clicking a radio's label selects it, or that a preview keeps its CSS, fails even when no other test covers it. Normal use shows the break at once (2 = no) and it costs nothing (1 = no).
 
-Exception: a test that is the only proof of tenant isolation, auth, money or data integrity stays (rewritten if needed) even below 3, including skipped or quarantined ones.
+Exception: the only proof of a costly behavior (tenant isolation, auth, money, data integrity) stays even below 3, rewritten if needed, including skipped or quarantined ones. Being in costly code is not enough: another test must not already prove it.
 
 Before writing one:
 
 - Search first: sibling tests, other files that exercise the same function, the other layer (unit, integration, e2e). Prefer, in order: an assertion in an existing flow, a row in an existing table-driven test, a case in an existing file, a new file.
 - Bug fix: add a regression only if it fails before the fix and no existing test could have caught it. One test at the owning layer, never one per crossed layer.
 - Never add a production seam for a test: an export, a `forTest` hook, a threshold option, a mutable field, an "if running under tests" branch.
-- A failing test may be a product bug: report it instead of deleting it.
+- Never weaken, skip or delete an existing test to make your change pass. A failing test means the code is wrong, unless the requirement changed; then say so and change the test on purpose.
 
 ## Codes
 
-Never-write patterns. They fail regardless of the bar.
+Never write these patterns, whatever the bar says.
 
 |Code|Pattern|
 |-|-|
@@ -52,20 +54,6 @@ Never-write patterns. They fail regardless of the bar.
 |`LAYER`|Wrong layer: a heavily mocked unit test of database or route behavior, or a slow end-to-end test of pure logic or static text.|
 |`FLAKY`|Fixed sleeps (including "sleep, then assert nothing happened"), real clock, unseeded randomness, shared mutable state, order dependence. Never add retries to hide it.|
 |`DEAD`|Skipped, todo with a body, disabled by a hardcoded flag, or gated on an environment variable that is off by default.|
-
-Other codes used in reports: `LOW_VALUE` (correct, proves real behavior, but fails the value bar, like the worked example), `VALUABLE` (passes the bar: kept, merged or rewritten), `OTHER` (avoid).
-
-## Actions
-
-|Action|When|
-|-|-|
-|`delete`|Fails the bar or matches a code, and nothing meaningful becomes unprotected.|
-|`delete` + `DUP`|Another existing test already proves everything this one does. Example: "creates a user" when "deletes a user" creates one and checks it first. Name the subsuming test in `coveredBy`.|
-|`merge`|Several cases worth keeping could become fewer tests with the same coverage: N near-identical cases into one table, or step tests into one flow. Give all of them the same `mergeGroup` label naming the result. Answer the bar for the merged test: when it fails, the cases are deletes, not a table.|
-|`rewrite`|Passes the bar but asserts it badly (`TAUT`, `CALLS`, `SNAP`, `LAYER`, `FLAKY`), or is the only proof of a protected behavior.|
-|`keep`|At least 3 bar answers are yes and no code applies.|
-
-Subsumed is not merged: if a test adds nothing over another one, delete it. Merge only when combining keeps coverage that each case alone provides.
 
 ## Patterns agents copy, do not copy
 
@@ -111,4 +99,4 @@ Never prove one behavior at two layers unless the second adds transport, seriali
 - New regression: show it fails with the fix reverted, then passes.
 - Report test lines versus production lines added; more test lines than production lines needs a reason.
 
-Examples of each code in several languages: [references/examples.md](references/examples.md).
+Examples of each code in several languages: [references/examples.md](references/examples.md). Auditing existing tests: [references/auditing.md](references/auditing.md).

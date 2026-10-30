@@ -7,3 +7,5 @@ coverage
 *.log
 .tests-diet
 .scratch
+images/social-card.html
+scripts/social-card.tsx

@@ -1,5 +1,16 @@
 import type { SubmitFileReport, SubmittedFinding } from './report-schema.js';
-import type { FileVerdict, Finding, TestCase, TestFile } from './types.js';
+import {
+  CATEGORIES,
+  type FileVerdict,
+  type Finding,
+  type TestCase,
+  type TestFile
+} from './types.js';
+
+// Every code except the report-only ones (LOW_VALUE, VALUABLE, OTHER).
+const NEVER_WRITE = new Set<string>(
+  CATEGORIES.filter((c) => c !== 'LOW_VALUE' && c !== 'VALUABLE' && c !== 'OTHER')
+);
 
 export interface CheckedReport {
   /** Findings with ranges snapped to detected cases, end lines filled in, and names set. */
@@ -71,12 +82,25 @@ export function checkReport(
       errors.push(`${label}: a DUP delete needs coveredBy naming the test that already proves it.`);
     }
     const yes = Object.values(finding.bar).filter(Boolean).length;
-    if (finding.action === 'keep' && yes < 3 && !finding.bar.costly) {
+    // Sole proof of a costly behavior: costly, and nothing else would catch the break (silent).
+    // Costly alone is not enough, or any small test in billing code would pass.
+    const soleProof = finding.bar.costly && finding.bar.silent;
+    if (finding.action === 'keep' && yes < 3 && !soleProof) {
       errors.push(
-        `${label}: keep needs at least 3 bar answers true (or costly for a sole proof); got ${yes}.`
+        `${label}: keep needs at least 3 bar answers true, or costly and silent for the only proof of a costly behavior; got ${yes}.`
       );
     }
-    if (finding.action === 'merge' && yes < 3 && !finding.bar.costly) {
+    if (finding.action === 'keep' && NEVER_WRITE.has(finding.category)) {
+      errors.push(
+        `${label}: a case matching ${finding.category} is not kept: delete it, or rewrite it when the behavior passes the bar.`
+      );
+    }
+    if (finding.action === 'rewrite' && finding.category === 'LOW_VALUE') {
+      errors.push(
+        `${label}: LOW_VALUE fails the bar, so it is a delete; rewrite is for behavior that passes the bar.`
+      );
+    }
+    if (finding.action === 'merge' && yes < 3 && !soleProof) {
       errors.push(
         `${label}: merge is for cases worth keeping. Answer the bar for the merged test; if fewer than 3 hold, the case is a delete.`
       );
