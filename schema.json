@@ -1,0 +1,237 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON schema of this file."
+    },
+    "languages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "matchers"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "matchers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["include"],
+              "properties": {
+                "include": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Globs relative to the project root."
+                },
+                "contains": {
+                  "type": "string",
+                  "description": "Regex (multiline) the file content must match, e.g. `#\\[test\\]`."
+                },
+                "inline": {
+                  "type": "boolean",
+                  "description": "Matched files are production code with embedded tests: never deleted as a whole."
+                }
+              },
+              "additionalProperties": false
+            },
+            "description": "A file belongs to the language if any matcher accepts it."
+          },
+          "caseStart": {
+            "type": "string",
+            "description": "Regex matching the line where a test case starts. Without it the agent finds cases alone and files are never deleted as a whole."
+          },
+          "attribute": {
+            "type": "string",
+            "description": "Regex for decorator/attribute lines that belong to the case below them (`@pytest.mark...`, `#[ignore]`)."
+          },
+          "blockComments": {
+            "type": "boolean",
+            "description": "Blank `/* ... */` comments before scanning, so commented-out tests are not detected."
+          },
+          "blocks": {
+            "type": "string",
+            "enum": ["braces", "indent"],
+            "description": "How a case's last line is found: balanced `()`/`{}`, or indentation (Python). Unset: the agent reports it."
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Replaces the default languages. Prefer `extraLanguages` to add one."
+    },
+    "extraLanguages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "matchers"],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "matchers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["include"],
+              "properties": {
+                "include": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Globs relative to the project root."
+                },
+                "contains": {
+                  "type": "string",
+                  "description": "Regex (multiline) the file content must match, e.g. `#\\[test\\]`."
+                },
+                "inline": {
+                  "type": "boolean",
+                  "description": "Matched files are production code with embedded tests: never deleted as a whole."
+                }
+              },
+              "additionalProperties": false
+            },
+            "description": "A file belongs to the language if any matcher accepts it."
+          },
+          "caseStart": {
+            "type": "string",
+            "description": "Regex matching the line where a test case starts. Without it the agent finds cases alone and files are never deleted as a whole."
+          },
+          "attribute": {
+            "type": "string",
+            "description": "Regex for decorator/attribute lines that belong to the case below them (`@pytest.mark...`, `#[ignore]`)."
+          },
+          "blockComments": {
+            "type": "boolean",
+            "description": "Blank `/* ... */` comments before scanning, so commented-out tests are not detected."
+          },
+          "blocks": {
+            "type": "string",
+            "enum": ["braces", "indent"],
+            "description": "How a case's last line is found: balanced `()`/`{}`, or indentation (Python). Unset: the agent reports it."
+          }
+        },
+        "additionalProperties": false
+      },
+      "description": "Languages checked before the defaults (the first matching language wins)."
+    },
+    "include": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Only files matching one of these globs are considered."
+    },
+    "exclude": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Added to the default excludes (node_modules, dist, build, target, virtual environments, ...)."
+    },
+    "budget": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Target tokens of test code per group.",
+      "default": 50000
+    },
+    "minGroup": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Groups smaller than this are merged with neighbors when possible.",
+      "default": 15000
+    },
+    "tolerance": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Allowed overshoot over `budget`, as a fraction.",
+      "default": 0.1
+    },
+    "outDir": {
+      "type": "string",
+      "description": "Directory for state, sessions and reports, relative to the root.",
+      "default": ".tests-diet"
+    },
+    "model": {
+      "type": "string",
+      "description": "Model pattern resolved through your pi config, e.g. `claude-haiku-5-5` or `provider/id:low`."
+    },
+    "thinking": {
+      "type": "string",
+      "enum": ["off", "minimal", "low", "medium", "high", "xhigh", "max"],
+      "description": "Thinking level of the agents.",
+      "default": "low"
+    },
+    "concurrency": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Maximum parallel agents; never more than there are groups.",
+      "default": 32
+    },
+    "instructions": {
+      "type": "string",
+      "description": "Markdown file with repository-specific rules appended to the rubric, relative to the root."
+    },
+    "maxRejections": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Rejected `submit_file_report` calls tolerated per file before it is marked failed.",
+      "default": 3
+    },
+    "maxIdleTurns": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Model turns without an accepted report before the group's session is aborted.",
+      "default": 25
+    },
+    "agentDir": {
+      "type": "string",
+      "description": "pi config directory for the pool (settings, auth, models, packages). Default: pi's own."
+    },
+    "mcpServers": {
+      "type": "object",
+      "patternProperties": {
+        "^.*$": {
+          "type": "object",
+          "properties": {},
+          "additionalProperties": true
+        }
+      },
+      "description": "MCP servers for the pool only, in pi's `mcp.json` format (`command`/`args` or `url`). Exposure defaults to `direct`; their tools still need to be listed in `tools`."
+    },
+    "tools": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Extra tool names or patterns the agents may call, e.g. `mcp__serena__find_symbol`."
+    },
+    "extensions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Extra pi extension files loaded in every agent session."
+    },
+    "trustProject": {
+      "type": "boolean",
+      "description": "Load the audited project's `.pi` settings, packages and extensions.",
+      "default": false
+    },
+    "transport": {
+      "type": "string",
+      "enum": ["auto", "sse", "websocket", "websocket-cached"],
+      "description": "Provider transport for the pool.",
+      "default": "sse"
+    }
+  },
+  "$id": "https://arthur.run/tests-diet/schema.json",
+  "title": "tests-diet config",
+  "description": "Settings for tests-diet, read from tests-diet.config.json at the project root. CLI flags win.",
+  "additionalProperties": false
+}

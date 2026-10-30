@@ -71,10 +71,11 @@ Results depend on the model and on what your team considers valuable. Before a f
 
 ## Configure
 
-Settings can live in `tests-diet.config.json` at the root. CLI flags win over the file.
+Settings can live in `tests-diet.config.json` at the root. CLI flags win over the file. The `$schema` line gives editors completion and validation for every key.
 
 ```json
 {
+  "$schema": "https://arthur.run/tests-diet/schema.json",
   "model": "claude-haiku-5-5",
   "concurrency": 32,
   "budget": 50000,
@@ -159,6 +160,7 @@ Put this in `tests-diet.config.json`, or pass the `mcpServers` part with `--mcp-
 
 1. Node 24.16+ and pnpm, then `pnpm install`.
 2. `pnpm build`, `pnpm test-types`, `pnpm test`, `pnpm lint`.
+3. After changing `src/config-schema.ts`, run `pnpm generate` to rewrite `schema.json` (CI fails when it is stale).
 
 ## License
 

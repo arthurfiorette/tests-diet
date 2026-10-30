@@ -224,14 +224,19 @@ export interface Config {
    * Provider transport for the pool. `sse` by default: long unattended runs on WebSocket transports
    * saw frequent "WebSocket closed" errors, each costing a retry round.
    */
-  transport: 'auto' | 'sse' | 'websocket' | 'websocket-cached';
+  transport: Transport;
 }
+
+export const TRANSPORTS = ['auto', 'sse', 'websocket', 'websocket-cached'] as const;
+export type Transport = (typeof TRANSPORTS)[number];
 
 export type ConfigFile = { [K in keyof Omit<Config, 'root'>]?: Config[K] | undefined };
 
 export const CONFIG_FILE = 'tests-diet.config.json';
 
 const CONFIG_KEYS = new Set<string>([
+  // Editor hint pointing at schema.json; ignored.
+  '$schema',
   'languages',
   'extraLanguages',
   'include',
@@ -297,6 +302,7 @@ export function loadConfig(root: string, overrides: ConfigFile = {}): Config {
     }
     const unknown = Object.keys(fromFile).filter((key) => !CONFIG_KEYS.has(key));
     if (unknown.length) throw new Error(`${file}: unknown keys ${unknown.join(', ')}`);
+    delete (fromFile as { $schema?: unknown }).$schema;
   }
   const fileValues = defined(fromFile);
   const cliValues = defined(overrides);
