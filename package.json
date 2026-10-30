@@ -50,7 +50,7 @@
   },
   "devDependencies": {
     "@arthurfiorette/biomejs-config": "^2.0.1",
-    "@biomejs/biome": "2.5.14",
+    "@biomejs/biome": "2.6.3",
     "@types/node": "^24.19.2",
     "@types/picomatch": "^4.0.3",
     "tsx": "^4.23.15",
