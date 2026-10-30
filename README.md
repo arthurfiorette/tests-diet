@@ -84,11 +84,11 @@ A test case stays only if at least 3 of these hold: a break would be costly, it 
 
 Each run writes three files to `.tests-diet/`:
 
-| File | For |
-| --- | --- |
+| File              | For                                                                                                                                                                                             |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `tests-diet.html` | You. A self-contained page with every file, its verdict and every test case next to its source, the bar answers and the reason. Filter by action, search by name, and open any case in VS Code. |
-| `tests-diet.md` | An agent. Every file with something to change, deletions ordered bottom-up so line numbers stay valid, merges grouped into the test they should become, and the cleanup and validation steps. |
-| `tests-diet.json` | Scripts. Everything above, plus tokens and cost per file. |
+| `tests-diet.md`   | An agent. Every file with something to change, deletions ordered bottom-up so line numbers stay valid, merges grouped into the test they should become, and the cleanup and validation steps.   |
+| `tests-diet.json` | Scripts. Everything above, plus tokens and cost per file.                                                                                                                                       |
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/arthurfiorette/tests-diet/main/images/readme-report.png" alt="The HTML report: a file tree on the left, and test cases marked Delete or Merge with their reason, bar answers and source" />
@@ -139,28 +139,28 @@ npx skills add arthurfiorette/tests-diet --skill writing-tests
 
 `tests-diet.config.json` at the project root is the place for settings. The `$schema` line gives your editor completion and validation for every key. Command-line flags override the file for a single run.
 
-| Key | Flag | Default | What it does |
-| --- | --- | --- | --- |
-| `model` | `--model` | your pi default | pi model pattern, such as `claude-haiku-5-5` or `provider/id`. |
-| `thinking` | `--thinking` | `low` | Thinking level: `off`, `minimal`, `low`, `medium`, `high`, `xhigh` or `max`. |
-| `concurrency` | `--concurrency` | `32` | Maximum agents at once. Never more than there are groups. Lower it if your provider rate-limits you. |
-| `instructions` | `--instructions` | none | Markdown file with project rules, appended to the rubric. |
-| `include` | `--include` | everything | Only consider files matching these globs. |
-| `exclude` | `--exclude` | none | Skip files matching these globs, on top of `node_modules`, `dist`, `build`, `target`, virtual environments and the like. |
-| `budget` | `--budget` | `50000` | Target tokens of test code per group. |
-| `minGroup` | `--min-group` | `15000` | Groups smaller than this are merged with a neighbor. |
-| `tolerance` | `--tolerance` | `0.1` | How far a group may go over `budget`, as a fraction. |
-| `outDir` | `--out` | `.tests-diet` | State, sessions and reports, relative to the root. |
-| `languages` | | built in | Replaces the built-in languages. |
-| `extraLanguages` | `--match`, `--case-start` | none | Languages checked before the built-in ones. |
-| `mcpServers` | `--mcp-config` | none | MCP servers for the agents, in pi's `mcp.json` format. |
-| `tools` | `--tools` | none | Extra tools the agents may call. `read`, `grep`, `find` and `ls` are always on. |
-| `extensions` | `--extension` | none | Extra pi extensions loaded in every agent. |
-| `agentDir` | `--agent-dir` | pi's own | pi config directory for the agents. |
-| `trustProject` | `--trust-project` | `false` | Load the audited project's `.pi` settings, packages and extensions. |
-| `maxRejections` | | `3` | Rejected reports per file before the file is marked failed. |
-| `maxIdleTurns` | | `25` | Agent turns without an accepted report before the session is stopped. |
-| `transport` | | `sse` | Provider transport: `auto`, `sse`, `websocket` or `websocket-cached`. |
+| Key              | Flag                      | Default         | What it does                                                                                                             |
+| ---------------- | ------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `model`          | `--model`                 | your pi default | pi model pattern, such as `claude-haiku-5-5` or `provider/id`.                                                           |
+| `thinking`       | `--thinking`              | `low`           | Thinking level: `off`, `minimal`, `low`, `medium`, `high`, `xhigh` or `max`.                                             |
+| `concurrency`    | `--concurrency`           | `32`            | Maximum agents at once. Never more than there are groups. Lower it if your provider rate-limits you.                     |
+| `instructions`   | `--instructions`          | none            | Markdown file with project rules, appended to the rubric.                                                                |
+| `include`        | `--include`               | everything      | Only consider files matching these globs.                                                                                |
+| `exclude`        | `--exclude`               | none            | Skip files matching these globs, on top of `node_modules`, `dist`, `build`, `target`, virtual environments and the like. |
+| `budget`         | `--budget`                | `50000`         | Target tokens of test code per group.                                                                                    |
+| `minGroup`       | `--min-group`             | `15000`         | Groups smaller than this are merged with a neighbor.                                                                     |
+| `tolerance`      | `--tolerance`             | `0.1`           | How far a group may go over `budget`, as a fraction.                                                                     |
+| `outDir`         | `--out`                   | `.tests-diet`   | State, sessions and reports, relative to the root.                                                                       |
+| `languages`      |                           | built in        | Replaces the built-in languages.                                                                                         |
+| `extraLanguages` | `--match`, `--case-start` | none            | Languages checked before the built-in ones.                                                                              |
+| `mcpServers`     | `--mcp-config`            | none            | MCP servers for the agents, in pi's `mcp.json` format.                                                                   |
+| `tools`          | `--tools`                 | none            | Extra tools the agents may call. `read`, `grep`, `find` and `ls` are always on.                                          |
+| `extensions`     | `--extension`             | none            | Extra pi extensions loaded in every agent.                                                                               |
+| `agentDir`       | `--agent-dir`             | pi's own        | pi config directory for the agents.                                                                                      |
+| `trustProject`   | `--trust-project`         | `false`         | Load the audited project's `.pi` settings, packages and extensions.                                                      |
+| `maxRejections`  |                           | `3`             | Rejected reports per file before the file is marked failed.                                                              |
+| `maxIdleTurns`   |                           | `25`            | Agent turns without an accepted report before the session is stopped.                                                    |
+| `transport`      |                           | `sse`           | Provider transport: `auto`, `sse`, `websocket` or `websocket-cached`.                                                    |
 
 Some flags only make sense for one run and have no key: `--limit <n>` runs the first n pending groups, `--only <path>` runs groups with files under a path, `--fresh` classifies again even when results are current, `--replan` regroups after you change discovery settings, and `--force` runs on a dirty work tree. `tests-diet --help` lists them all.
 

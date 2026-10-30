@@ -8,6 +8,9 @@
       }
     }
   },
+  "files": {
+    "includes": ["!**/*.md"]
+  },
   "javascript": {
     "formatter": {
       "bracketSpacing": true
