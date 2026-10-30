@@ -16,67 +16,65 @@
 
 # tests-diet
 
-**Spawn a pool of [pi](https://pi.dev) agents that review every test in your repository and tell you which ones to delete.**
+**Spawn a pool of [pi](https://pi.dev) agents to find the tests in your repository that are not worth keeping.**
 
-Coding agents write a test for every change and copy the shape of the tests next to them, so suites grow faster than the protection they give. Every one of those tests costs CI time on each run and agent tokens on each change. `tests-diet` splits your test files into groups and hands each group to an agent. The agent reads the tests, the code they exercise and the other tests that already cover it, then gives every test case a verdict: `delete`, `merge`, `rewrite` or `keep`. You review the verdicts in a browser, `tests-diet delete` removes the clear deletions, and an agent of your choice applies the rest from a Markdown report.
+Coding agents write a test for every change, so test suites grow faster than the protection they give, and every test costs CI time on every run. tests-diet hands your test files to a pool of agents. Each agent reads the tests and the code they cover, then marks every test case to keep, delete, merge or rewrite. You review the result in your browser and apply it with one command.
 
-The CLI cleans up the suite you have today. To keep it that way, install the [`writing-tests` skill](#keep-it-lean) in your coding agents: it is the same rubric, and it makes them check whether a test is worth writing before they add one.
+A test stays only if 3 of these 4 are true: a break would be costly, nothing else would catch it, the code is likely to break, and the test is cheap to run.
 
-A test case stays only if at least 3 of these hold: a break would be costly, it would be silent (types, other tests and normal use would not reveal it), the code is likely to break, and the test is cheap to run. The full rubric is in [`skills/writing-tests/SKILL.md`](skills/writing-tests/SKILL.md).
+Use the CLI to clean up the tests you have today, then install the writing-tests skill so your agents stop adding new ones.
 
 > [!WARNING]
-> A run sends every test file, and the code the agents choose to read, to your model provider through pi. It costs money in proportion to the size of your suite. Run `tests-diet plan` and a `--limit 2` run first to see what a full run will cost.
+> Every test file, and any code the agents read, is sent to your model provider. Start with a small run to see what a full one will cost.
 
-**Requirements:** Node.js 24.16+, git, and a working [pi](https://pi.dev) setup (`pi -p "hi"` answers). [Get started](#get-started) · [Review the report](#review-the-report) · [Apply it](#apply-it) · [Keep it lean](#keep-it-lean) · [Configuration](#configuration) · [Serena](#recommended-serena)
+You need Node.js 24.16+, git, and pi set up with a model you can use.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/arthurfiorette/tests-diet/main/images/readme-terminal.png" alt="tests-diet run showing 32 agents, each with its group, files reported, turns, tokens, cost and current tool call" />
+  <img src="https://raw.githubusercontent.com/arthurfiorette/tests-diet/main/images/readme-terminal.png" alt="tests-diet run showing each agent's group, files reported, turns, tokens, cost and current tool call" />
 </p>
 
 <br />
 
 ## Get started
 
-1. Install the CLI:
+Install the CLI:
 
-   ```sh
-   npm i -g tests-diet
-   ```
+```sh
+npm i -g tests-diet
+```
 
-2. Create `tests-diet.config.json` at the root of the repository you want to audit:
+Create `tests-diet.config.json` at the root of the repository you want to audit:
 
-   ```json
-   {
-     "$schema": "https://arthur.run/tests-diet/schema.json",
-     "model": "claude-haiku-5-5",
-     "instructions": "docs/test-rules.md"
-   }
-   ```
+```json
+{
+  "$schema": "https://arthur.run/tests-diet/schema.json",
+  "model": "claude-haiku-5-5",
+  "instructions": "docs/test-rules.md"
+}
+```
 
-   `model` is any model pattern your pi setup resolves, including models from pi packages that register a provider. `instructions` is optional: a Markdown file with your project's rules (areas that are always protected, patterns you always keep). Every other key is in the [configuration reference](#configuration).
+The model can be any model your pi setup knows. The instructions file is optional: write your own rules there, like areas where every test stays. Your editor shows every other option as you type.
 
-3. See what will be audited. This makes no model calls:
+Check what will be audited, without calling a model:
 
-   ```sh
-   tests-diet plan
-   ```
+```sh
+tests-diet plan
+```
 
-4. Classify two groups and open the report:
+Try it on two groups and open the report:
 
-   ```sh
-   tests-diet run --limit 2
-   open .tests-diet/tests-diet.html
-   ```
+```sh
+tests-diet run --limit 2
+open .tests-diet/tests-diet.html
+```
 
-   If you disagree with verdicts, write the reason into your `instructions` file and run it again. Changing the instructions, the model or the rubric marks earlier results as stale, so they are classified again.
+If you disagree with some verdicts, add your reasons to the instructions file and run again. Then run everything:
 
-5. Classify everything else:
+```sh
+tests-diet run
+```
 
-   ```sh
-   tests-diet run
-   ```
-
-`run` needs a clean git work tree, because the report points at line ranges of the current files. Pass `--force` to skip that check. Press Ctrl+C at any time: accepted reports and agent sessions are saved in `.tests-diet/`, and the next `run` continues where it stopped, including groups that were half done.
+You can stop with Ctrl+C at any time. The next run continues where it stopped. Runs need a clean git work tree, since the report points at line numbers.
 
 <br />
 
@@ -84,91 +82,85 @@ A test case stays only if at least 3 of these hold: a break would be costly, it 
 
 Each run writes three files to `.tests-diet/`:
 
-| File              | For                                                                                                                                                                                             |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tests-diet.html` | You. A self-contained page with every file, its verdict and every test case next to its source, the bar answers and the reason. Filter by action, search by name, and open any case in VS Code. |
-| `tests-diet.md`   | An agent. Every file with something to change, deletions ordered bottom-up so line numbers stay valid, merges grouped into the test they should become, and the cleanup and validation steps.   |
-| `tests-diet.json` | Scripts. Everything above, plus tokens and cost per file.                                                                                                                                       |
+| File            | For                                                                                                             |
+| --------------- | --------------------------------------------------------------------------------------------------------------- |
+| tests-diet.html | You. Every test with its verdict, the reason and its source code. Filter, search, and open any test in VS Code. |
+| tests-diet.md   | An agent. Instructions to apply the changes, file by file.                                                      |
+| tests-diet.json | Scripts. All the data, including tokens and cost per file.                                                      |
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/arthurfiorette/tests-diet/main/images/readme-report.png" alt="The HTML report: a file tree on the left, and test cases marked Delete or Merge with their reason, bar answers and source" />
+  <img src="https://raw.githubusercontent.com/arthurfiorette/tests-diet/main/images/readme-report.png" alt="The HTML report: a file tree on the left, and test cases marked Delete or Merge with their reason, checks and source" />
 </p>
 
-Every finding carries a category explaining the verdict, such as `CONST` (a test that asserts a constant equals itself), `TAUT` (passes by construction), `DUP` (another test already proves it) or `LOW_VALUE` (correct, but fails the bar). It also has a confidence level from `very_low` to `very_high`. A `DUP` deletion names the test that covers it. Cases sharing a `mergeGroup` should become one test, usually a table.
+Each verdict comes with a reason and a confidence level. Tests marked as duplicates name the test that already covers them, and tests to merge are grouped into the single test they should become.
 
-`tests-diet status` prints progress, verdict counts, tokens and cost of the stored run at any time; `-w` keeps it updating. `tests-diet report` rewrites the three files without calling a model.
+`tests-diet status` shows progress and cost at any time.
 
 <br />
 
 ## Apply it
 
-`tests-diet delete` applies the part of the report that needs no judgment: it deletes files where every case is a deletion and removes every `delete` range.
+Deleting tests needs no judgment, so the CLI does it:
 
 ```sh
 tests-diet delete --dry-run
 tests-diet delete
 ```
 
-It only touches files whose content is unchanged since they were reported, and only removes cases whose last line `tests-diet` found itself, so it never leaves half a test behind. Findings below `medium` confidence are skipped; change that with `--min-confidence`, and use `--only <path>` to apply one folder at a time. Production files that contain tests, such as Rust modules with `#[cfg(test)]`, are never deleted as a whole.
+It only changes files that are unchanged since the run, and skips anything below medium confidence. Use `--only <folder>` to go one folder at a time.
 
-Merges and rewrites stay in `tests-diet.md`. Hand that file to your coding agent with the [`tests-diet` skill](skills/tests-diet/SKILL.md), which walks through applying it, cleaning up unused helpers and imports, and running your checks:
+Merges and rewrites need an agent. Install the tests-diet skill and ask your agent to apply `.tests-diet/tests-diet.md`:
 
 ```sh
 npx skills add arthurfiorette/tests-diet --skill tests-diet
 ```
 
-The report is large on a big repository. Every `## <path>` section stands alone, so have the agent work through it one folder at a time.
-
 <br />
 
 ## Keep it lean
 
-A pruned suite grows back if your agents keep writing a test for every change. The [`writing-tests` skill](skills/writing-tests/SKILL.md) is the rubric the auditors use, written for whoever adds the next test. Agents read it before writing or changing a test. It makes them search for existing coverage first, check the value bar, pick the right layer, and skip patterns such as asserting a constant against itself or a mock against the value it was told to return.
-
-Install it in the repository, for every agent you use:
+A clean suite grows back if your agents keep writing a test for every change. The writing-tests skill is the same rubric the auditors use, written for whoever adds the next test. Agents read it before writing a test: it makes them look for existing coverage first and skip tests that would not pass the bar.
 
 ```sh
 npx skills add arthurfiorette/tests-diet --skill writing-tests
 ```
 
-`npx skills add arthurfiorette/tests-diet` without `--skill` lets you pick both skills. Add `-g` to install for your user instead of one project.
+Add `-g` to install it for all your projects.
 
 <br />
 
 ## Configuration
 
-`tests-diet.config.json` at the project root is the place for settings. The `$schema` line gives your editor completion and validation for every key. Command-line flags override the file for a single run.
+All settings live in `tests-diet.config.json`. With the `$schema` line, your editor completes and documents every option. Command-line flags override the file for one run.
 
-| Key              | Flag                      | Default         | What it does                                                                                                             |
-| ---------------- | ------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `model`          | `--model`                 | your pi default | pi model pattern, such as `claude-haiku-5-5` or `provider/id`.                                                           |
-| `thinking`       | `--thinking`              | `low`           | Thinking level: `off`, `minimal`, `low`, `medium`, `high`, `xhigh` or `max`.                                             |
-| `concurrency`    | `--concurrency`           | `32`            | Maximum agents at once. Never more than there are groups. Lower it if your provider rate-limits you.                     |
-| `instructions`   | `--instructions`          | none            | Markdown file with project rules, appended to the rubric.                                                                |
-| `include`        | `--include`               | everything      | Only consider files matching these globs.                                                                                |
-| `exclude`        | `--exclude`               | none            | Skip files matching these globs, on top of `node_modules`, `dist`, `build`, `target`, virtual environments and the like. |
-| `budget`         | `--budget`                | `50000`         | Target tokens of test code per group.                                                                                    |
-| `minGroup`       | `--min-group`             | `15000`         | Groups smaller than this are merged with a neighbor.                                                                     |
-| `tolerance`      | `--tolerance`             | `0.1`           | How far a group may go over `budget`, as a fraction.                                                                     |
-| `outDir`         | `--out`                   | `.tests-diet`   | State, sessions and reports, relative to the root.                                                                       |
-| `languages`      |                           | built in        | Replaces the built-in languages.                                                                                         |
-| `extraLanguages` | `--match`, `--case-start` | none            | Languages checked before the built-in ones.                                                                              |
-| `mcpServers`     | `--mcp-config`            | none            | MCP servers for the agents, in pi's `mcp.json` format.                                                                   |
-| `tools`          | `--tools`                 | none            | Extra tools the agents may call. `read`, `grep`, `find` and `ls` are always on.                                          |
-| `extensions`     | `--extension`             | none            | Extra pi extensions loaded in every agent.                                                                               |
-| `agentDir`       | `--agent-dir`             | pi's own        | pi config directory for the agents.                                                                                      |
-| `trustProject`   | `--trust-project`         | `false`         | Load the audited project's `.pi` settings, packages and extensions.                                                      |
-| `maxRejections`  |                           | `3`             | Rejected reports per file before the file is marked failed.                                                              |
-| `maxIdleTurns`   |                           | `25`            | Agent turns without an accepted report before the session is stopped.                                                    |
-| `transport`      |                           | `sse`           | Provider transport: `auto`, `sse`, `websocket` or `websocket-cached`.                                                    |
+| Option           | Flag              | Default         | Description                                                                                            |
+| ---------------- | ----------------- | --------------- | ------------------------------------------------------------------------------------------------------ |
+| `model`          | `--model`         | your pi default | Model the agents use.                                                                                  |
+| `thinking`       | `--thinking`      | `low`           | Thinking level, from off to max.                                                                       |
+| `concurrency`    | `--concurrency`   | `32`            | Agents running at once. Lower it if your provider rate-limits you.                                     |
+| `instructions`   | `--instructions`  |                 | Markdown file with your own rules.                                                                     |
+| `include`        | `--include`       |                 | Only audit files matching these globs.                                                                 |
+| `exclude`        | `--exclude`       |                 | Skip files matching these globs. node_modules, build folders and git-ignored files are always skipped. |
+| `budget`         | `--budget`        | `50000`         | Tokens of test code per agent session.                                                                 |
+| `minGroup`       | `--min-group`     | `15000`         | Smaller groups are merged with a neighbor.                                                             |
+| `tolerance`      | `--tolerance`     | `0.1`           | How far a group may go over the budget.                                                                |
+| `outDir`         | `--out`           | `.tests-diet`   | Where state and reports go.                                                                            |
+| `languages`      |                   | built in        | Replaces the built-in languages.                                                                       |
+| `extraLanguages` | `--match`         |                 | Adds languages.                                                                                        |
+| `mcpServers`     | `--mcp-config`    |                 | MCP servers for the agents.                                                                            |
+| `tools`          | `--tools`         |                 | Extra tools the agents may call.                                                                       |
+| `extensions`     | `--extension`     |                 | Extra pi extensions.                                                                                   |
+| `agentDir`       | `--agent-dir`     | pi's own        | pi config folder for the agents.                                                                       |
+| `trustProject`   | `--trust-project` | `false`         | Load the audited project's own pi settings.                                                            |
+| `maxRejections`  |                   | `3`             | Rejected reports per file before giving up on it.                                                      |
+| `maxIdleTurns`   |                   | `25`            | Agent turns without progress before stopping its session.                                              |
+| `transport`      |                   | `sse`           | Connection type to the provider.                                                                       |
 
-Some flags only make sense for one run and have no key: `--limit <n>` runs the first n pending groups, `--only <path>` runs groups with files under a path, `--fresh` classifies again even when results are current, `--replan` regroups after you change discovery settings, and `--force` runs on a dirty work tree. `tests-diet --help` lists them all.
+Run `tests-diet --help` for flags that only apply to one run, such as `--limit`, `--only` and `--fresh`.
 
 ### Languages
 
-Test files are found for JavaScript and TypeScript, Python, Rust (including inline `#[cfg(test)]` modules), Go, Java, Kotlin, C#, Ruby, PHP, Swift, Elixir, Dart, Scala, C++ and Lua. Files ignored by git are skipped, and so are files matched by name where no test case is found, such as `test-helpers.ts`.
-
-For anything else, add a language. `matchers` decide which files belong to it, optionally gated on a content regex with `contains`, and `caseStart` is a regex for the line where a test case starts:
+tests-diet finds tests in JavaScript, TypeScript, Python, Rust, Go, Java, Kotlin, C#, Ruby, PHP, Swift, Elixir, Dart, Scala, C++ and Lua. For anything else, add a language with the files it covers and a regex for the line where a test starts:
 
 ```json
 {
@@ -183,26 +175,20 @@ For anything else, add a language. `matchers` decide which files belong to it, o
 }
 ```
 
-A matcher with `"inline": true` marks production files that embed tests, which are never deleted as a whole. Discovery settings are stored with the plan, so changing them needs `--replan`.
-
 <br />
 
-## Agent environment
+## Recommended: Serena
 
-The agents use your own pi setup: settings, credentials, models, and pi packages such as one that registers your model provider. Nothing from the audited project is loaded unless you set `trustProject`. Context files (`AGENTS.md`, `CLAUDE.md`), skills, prompt templates and your personal `mcp.json` are never loaded, so every agent gets the same prompt and the provider can cache it once for all of them.
+The agents run with your own pi setup, but they only get read-only tools and never load the audited project's agent files or your personal MCP servers.
 
-The agents cannot edit files. They get `read`, `grep`, `find`, `ls`, the tools you list in `tools`, and the `submit_file_report` tool they report through.
-
-### Recommended: Serena
-
-[Serena](https://github.com/oraios/serena) gives the agents symbol navigation: find a function, find everything that references it. Answering "is this behavior already tested somewhere else?" gets cheaper and more accurate than with grep. Every agent audits the same project, so run one shared Serena server:
+[Serena](https://github.com/oraios/serena) lets them find a function and everything that uses it, which makes checking whether a behavior is already tested faster and more accurate than grep. Start one shared server:
 
 ```sh
 uvx --from git+https://github.com/oraios/serena serena start-mcp-server \
   --transport streamable-http --port 9121 --project "$(pwd)" --mode planning --mode no-onboarding
 ```
 
-Then point the agents at it and allow its read-only tools in `tests-diet.config.json`:
+Then add it to your config with its read-only tools:
 
 ```json
 {
@@ -219,18 +205,13 @@ Then point the agents at it and allow its read-only tools in `tests-diet.config.
 }
 ```
 
-Do not allow Serena's editing tools. MCP servers are declared to the model directly (`"exposure": "direct"` unless you set another), which keeps the tool list identical across agents and the prompt cache shared.
+Do not allow Serena's editing tools.
 
 <br />
 
 ## How a run works
 
-1. **Discover.** A regex per language finds where every test case starts, including decorators and attributes above it. Bracket matching, or indentation for Python, finds where it ends.
-2. **Group.** Files are packed into groups of about `budget` tokens. A file is never split, and files stay next to the others in their folder.
-3. **Classify.** Each agent takes a group from the queue and reports one file at a time. The report tool fixes small slips itself, such as a start line that points inside the case, and rejects reports that skip a case, keep a case that fails the bar, or delete a costly case without naming what still covers it. The agent fixes those and resubmits. After each accepted file, its transcript is dropped from the agent's context, so long groups stay cheap.
-4. **Report.** Results are written as each file is accepted, and the reports are rebuilt at the end of the run.
-
-`.tests-diet/` holds the plan and group status (`state.json`), accepted reports (`results.jsonl`), failures, the reports, and the pi sessions. Sessions contain the contents of the files the agents read. The folder has its own `.gitignore`.
+tests-diet finds every test case in your repository and where it starts and ends. It packs the test files into groups of about 50k tokens, keeping folders together, and gives each group to an agent. The agent reports one file at a time through a tool that rejects incomplete reports, such as a skipped test, so the agent fixes and resubmits them. Results are saved as each file is accepted, in `.tests-diet/`, which has its own `.gitignore`.
 
 <br />
 
@@ -238,7 +219,7 @@ Do not allow Serena's editing tools. MCP servers are declared to the model direc
 
 1. Use Node.js 24.16+ and pnpm, then run `pnpm install`.
 2. Run `pnpm build`, `pnpm test-types`, `pnpm test` and `pnpm lint`.
-3. After changing `src/config-schema.ts`, run `pnpm generate` to rewrite `schema.json`. CI fails when it is out of date.
+3. After changing `src/config-schema.ts`, run `pnpm generate` to update `schema.json`.
 
 <br />
 
