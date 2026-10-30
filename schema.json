@@ -4,7 +4,102 @@
   "properties": {
     "$schema": {
       "type": "string",
-      "description": "JSON schema of this file."
+      "description": "JSON schema of this file, for editor completion and validation.",
+      "markdownDescription": "JSON schema of this file, for editor completion and validation.",
+      "examples": ["https://arthur.run/tests-diet/schema.json"]
+    },
+    "model": {
+      "type": "string",
+      "description": "Model the agents use: any model pattern your pi setup resolves, including models from pi packages that register a provider. Unset: your pi default model.\n\nCLI: --model",
+      "markdownDescription": "Model the agents use: any model pattern your pi setup resolves, including models from pi packages that register a provider. Unset: your pi default model.\n\nCLI: `--model`",
+      "examples": ["claude-haiku-5-5", "anthropic/claude-haiku-5-5"]
+    },
+    "thinking": {
+      "type": "string",
+      "enum": ["off", "minimal", "low", "medium", "high", "xhigh", "max"],
+      "enumDescriptions": [
+        "No thinking.",
+        "The least thinking the model supports.",
+        "The default here: judgments hold up and output stays small.",
+        "pi's own default. More thinking tokens per file than low.",
+        "More thinking per file, at more cost.",
+        "More thinking per file, at more cost.",
+        "The most thinking the model supports."
+      ],
+      "markdownEnumDescriptions": [
+        "No thinking.",
+        "The least thinking the model supports.",
+        "The default here: judgments hold up and output stays small.",
+        "pi's own default. More thinking tokens per file than `low`.",
+        "More thinking per file, at more cost.",
+        "More thinking per file, at more cost.",
+        "The most thinking the model supports."
+      ],
+      "description": "Thinking level of the agents. Thinking is billed as output tokens, so higher levels cost more per file.\n\nCLI: --thinking · Default: \"low\"",
+      "markdownDescription": "Thinking level of the agents. Thinking is billed as output tokens, so higher levels cost more per file.\n\nCLI: `--thinking` · Default: `\"low\"`",
+      "default": "low"
+    },
+    "concurrency": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Maximum agents running at once. Never more than there are groups. Cost per file does not depend on it; lower it if your provider rate-limits you.\n\nCLI: --concurrency · Default: 32",
+      "markdownDescription": "Maximum agents running at once. Never more than there are groups. Cost per file does not depend on it; lower it if your provider rate-limits you.\n\nCLI: `--concurrency` · Default: `32`",
+      "default": 32
+    },
+    "instructions": {
+      "type": "string",
+      "description": "Markdown file with your project's rules, appended to the rubric: areas that are always protected, patterns you always keep, tests you disagree with. Relative to the project root. Changing it makes earlier results stale.\n\nCLI: --instructions",
+      "markdownDescription": "Markdown file with your project's rules, appended to the rubric: areas that are always protected, patterns you always keep, tests you disagree with. Relative to the project root. Changing it makes earlier results stale.\n\nCLI: `--instructions`",
+      "examples": ["docs/test-rules.md"]
+    },
+    "include": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "A glob relative to the project root, e.g. packages/*/test/**.",
+        "markdownDescription": "A glob relative to the project root, e.g. `packages/*/test/**`."
+      },
+      "description": "Only consider files matching one of these globs. Unset: every file.\n\nCLI: --include",
+      "markdownDescription": "Only consider files matching one of these globs. Unset: every file.\n\nCLI: `--include`",
+      "examples": [["packages/**"]]
+    },
+    "exclude": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "description": "A glob relative to the project root, e.g. packages/*/test/**.",
+        "markdownDescription": "A glob relative to the project root, e.g. `packages/*/test/**`."
+      },
+      "description": "Skip files matching these globs, on top of the built-in excludes (node_modules, dist, build, target, virtual environments and the like). Files ignored by git are always skipped.\n\nCLI: --exclude",
+      "markdownDescription": "Skip files matching these globs, on top of the built-in excludes (`node_modules`, `dist`, `build`, `target`, virtual environments and the like). Files ignored by git are always skipped.\n\nCLI: `--exclude`",
+      "examples": [["legacy/**"]]
+    },
+    "budget": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Target tokens of test code per group. Each group is one agent session.\n\nCLI: --budget · Default: 50000",
+      "markdownDescription": "Target tokens of test code per group. Each group is one agent session.\n\nCLI: `--budget` · Default: `50000`",
+      "default": 50000
+    },
+    "minGroup": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Groups smaller than this are merged with a neighbor when possible.\n\nCLI: --min-group · Default: 15000",
+      "markdownDescription": "Groups smaller than this are merged with a neighbor when possible.\n\nCLI: `--min-group` · Default: `15000`",
+      "default": 15000
+    },
+    "tolerance": {
+      "type": "number",
+      "minimum": 0,
+      "description": "How far a group may go over budget, as a fraction. 0.1 allows 10% more.\n\nCLI: --tolerance · Default: 0.1",
+      "markdownDescription": "How far a group may go over `budget`, as a fraction. `0.1` allows 10% more.\n\nCLI: `--tolerance` · Default: `0.1`",
+      "default": 0.1
+    },
+    "outDir": {
+      "type": "string",
+      "description": "Directory for the plan, results, agent sessions and reports, relative to the project root. It gets its own .gitignore.\n\nCLI: --out · Default: \".tests-diet\"",
+      "markdownDescription": "Directory for the plan, results, agent sessions and reports, relative to the project root. It gets its own `.gitignore`.\n\nCLI: `--out` · Default: `\".tests-diet\"`",
+      "default": ".tests-diet"
     },
     "languages": {
       "type": "array",
@@ -13,7 +108,9 @@
         "required": ["name", "matchers"],
         "properties": {
           "name": {
-            "type": "string"
+            "type": "string",
+            "description": "Language name shown in plans and reports, e.g. my-dsl.",
+            "markdownDescription": "Language name shown in plans and reports, e.g. `my-dsl`."
           },
           "matchers": {
             "type": "array",
@@ -24,44 +121,73 @@
                 "include": {
                   "type": "array",
                   "items": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "A glob relative to the project root, e.g. packages/*/test/**.",
+                    "markdownDescription": "A glob relative to the project root, e.g. `packages/*/test/**`."
                   },
-                  "description": "Globs relative to the project root."
+                  "description": "Files matching any of these globs belong to the language.",
+                  "markdownDescription": "Files matching any of these globs belong to the language.",
+                  "examples": [["**/*.spec.dsl"]]
                 },
                 "contains": {
                   "type": "string",
-                  "description": "Regex (multiline) the file content must match, e.g. `#\\[test\\]`."
+                  "description": "Only files whose content matches this regex (multiline). Use it when a glob alone also matches helpers, e.g. Rust files that contain #[test].\n\nA JavaScript regular expression source; escape backslashes in JSON (\\\\s).",
+                  "markdownDescription": "Only files whose content matches this regex (multiline). Use it when a glob alone also matches helpers, e.g. Rust files that contain `#[test]`.\n\nA JavaScript regular expression source; escape backslashes in JSON (`\\\\s`).",
+                  "examples": ["#\\[cfg\\(test\\)\\]"]
                 },
                 "inline": {
                   "type": "boolean",
-                  "description": "Matched files are production code with embedded tests: never deleted as a whole."
+                  "description": "Matched files are production code with tests embedded (Rust #[cfg(test)] modules). They are pruned case by case and never deleted as a whole.\n\nDefault: false",
+                  "markdownDescription": "Matched files are production code with tests embedded (Rust `#[cfg(test)]` modules). They are pruned case by case and never deleted as a whole.\n\nDefault: `false`",
+                  "default": false
                 }
               },
-              "additionalProperties": false
+              "additionalProperties": false,
+              "description": "Which files belong to the language.",
+              "markdownDescription": "Which files belong to the language."
             },
-            "description": "A file belongs to the language if any matcher accepts it."
+            "description": "A file belongs to the language when any matcher accepts it. The first matching language wins.",
+            "markdownDescription": "A file belongs to the language when any matcher accepts it. The first matching language wins."
           },
           "caseStart": {
             "type": "string",
-            "description": "Regex matching the line where a test case starts. Without it the agent finds cases alone and files are never deleted as a whole."
+            "description": "Matches the line where a test case starts. Agents get the list of cases and must report each one. Without it, agents find cases on their own and files are never deleted as a whole.\n\nA JavaScript regular expression source; escape backslashes in JSON (\\\\s).",
+            "markdownDescription": "Matches the line where a test case starts. Agents get the list of cases and must report each one. Without it, agents find cases on their own and files are never deleted as a whole.\n\nA JavaScript regular expression source; escape backslashes in JSON (`\\\\s`).",
+            "examples": ["^\\s*scenario\\b"]
           },
           "attribute": {
             "type": "string",
-            "description": "Regex for decorator/attribute lines that belong to the case below them (`@pytest.mark...`, `#[ignore]`)."
+            "description": "Matches decorator or attribute lines that belong to the case below them (@pytest.mark..., #[ignore], [Theory]). A case starts at its first such line, so deleting it never leaves a decorator behind.\n\nA JavaScript regular expression source; escape backslashes in JSON (\\\\s).",
+            "markdownDescription": "Matches decorator or attribute lines that belong to the case below them (`@pytest.mark...`, `#[ignore]`, `[Theory]`). A case starts at its first such line, so deleting it never leaves a decorator behind.\n\nA JavaScript regular expression source; escape backslashes in JSON (`\\\\s`).",
+            "examples": ["^\\s*@", "^\\s*#\\["]
           },
           "blockComments": {
             "type": "boolean",
-            "description": "Blank `/* ... */` comments before scanning, so commented-out tests are not detected."
+            "description": "Ignore /* ... */ comments when looking for cases, so commented-out tests are not detected.\n\nDefault: false",
+            "markdownDescription": "Ignore `/* ... */` comments when looking for cases, so commented-out tests are not detected.\n\nDefault: `false`",
+            "default": false
           },
           "blocks": {
             "type": "string",
             "enum": ["braces", "indent"],
-            "description": "How a case's last line is found: balanced `()`/`{}`, or indentation (Python). Unset: the agent reports it."
+            "enumDescriptions": [
+              "The case ends where its ()/{} brackets balance again.",
+              "The case ends before the next line indented at or above it (Python)."
+            ],
+            "markdownEnumDescriptions": [
+              "The case ends where its `()`/`{}` brackets balance again.",
+              "The case ends before the next line indented at or above it (Python)."
+            ],
+            "description": "How to find a case's last line. Unset: agents report it, and tests-diet delete leaves those cases to an agent.",
+            "markdownDescription": "How to find a case's last line. Unset: agents report it, and `tests-diet delete` leaves those cases to an agent."
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "How to recognize the test files and test cases of one language.",
+        "markdownDescription": "How to recognize the test files and test cases of one language."
       },
-      "description": "Replaces the default languages. Prefer `extraLanguages` to add one."
+      "description": "Replaces the built-in languages entirely. To add a language, use extraLanguages instead.",
+      "markdownDescription": "Replaces the built-in languages entirely. To add a language, use `extraLanguages` instead."
     },
     "extraLanguages": {
       "type": "array",
@@ -70,7 +196,9 @@
         "required": ["name", "matchers"],
         "properties": {
           "name": {
-            "type": "string"
+            "type": "string",
+            "description": "Language name shown in plans and reports, e.g. my-dsl.",
+            "markdownDescription": "Language name shown in plans and reports, e.g. `my-dsl`."
           },
           "matchers": {
             "type": "array",
@@ -81,157 +209,247 @@
                 "include": {
                   "type": "array",
                   "items": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "A glob relative to the project root, e.g. packages/*/test/**.",
+                    "markdownDescription": "A glob relative to the project root, e.g. `packages/*/test/**`."
                   },
-                  "description": "Globs relative to the project root."
+                  "description": "Files matching any of these globs belong to the language.",
+                  "markdownDescription": "Files matching any of these globs belong to the language.",
+                  "examples": [["**/*.spec.dsl"]]
                 },
                 "contains": {
                   "type": "string",
-                  "description": "Regex (multiline) the file content must match, e.g. `#\\[test\\]`."
+                  "description": "Only files whose content matches this regex (multiline). Use it when a glob alone also matches helpers, e.g. Rust files that contain #[test].\n\nA JavaScript regular expression source; escape backslashes in JSON (\\\\s).",
+                  "markdownDescription": "Only files whose content matches this regex (multiline). Use it when a glob alone also matches helpers, e.g. Rust files that contain `#[test]`.\n\nA JavaScript regular expression source; escape backslashes in JSON (`\\\\s`).",
+                  "examples": ["#\\[cfg\\(test\\)\\]"]
                 },
                 "inline": {
                   "type": "boolean",
-                  "description": "Matched files are production code with embedded tests: never deleted as a whole."
+                  "description": "Matched files are production code with tests embedded (Rust #[cfg(test)] modules). They are pruned case by case and never deleted as a whole.\n\nDefault: false",
+                  "markdownDescription": "Matched files are production code with tests embedded (Rust `#[cfg(test)]` modules). They are pruned case by case and never deleted as a whole.\n\nDefault: `false`",
+                  "default": false
                 }
               },
-              "additionalProperties": false
+              "additionalProperties": false,
+              "description": "Which files belong to the language.",
+              "markdownDescription": "Which files belong to the language."
             },
-            "description": "A file belongs to the language if any matcher accepts it."
+            "description": "A file belongs to the language when any matcher accepts it. The first matching language wins.",
+            "markdownDescription": "A file belongs to the language when any matcher accepts it. The first matching language wins."
           },
           "caseStart": {
             "type": "string",
-            "description": "Regex matching the line where a test case starts. Without it the agent finds cases alone and files are never deleted as a whole."
+            "description": "Matches the line where a test case starts. Agents get the list of cases and must report each one. Without it, agents find cases on their own and files are never deleted as a whole.\n\nA JavaScript regular expression source; escape backslashes in JSON (\\\\s).",
+            "markdownDescription": "Matches the line where a test case starts. Agents get the list of cases and must report each one. Without it, agents find cases on their own and files are never deleted as a whole.\n\nA JavaScript regular expression source; escape backslashes in JSON (`\\\\s`).",
+            "examples": ["^\\s*scenario\\b"]
           },
           "attribute": {
             "type": "string",
-            "description": "Regex for decorator/attribute lines that belong to the case below them (`@pytest.mark...`, `#[ignore]`)."
+            "description": "Matches decorator or attribute lines that belong to the case below them (@pytest.mark..., #[ignore], [Theory]). A case starts at its first such line, so deleting it never leaves a decorator behind.\n\nA JavaScript regular expression source; escape backslashes in JSON (\\\\s).",
+            "markdownDescription": "Matches decorator or attribute lines that belong to the case below them (`@pytest.mark...`, `#[ignore]`, `[Theory]`). A case starts at its first such line, so deleting it never leaves a decorator behind.\n\nA JavaScript regular expression source; escape backslashes in JSON (`\\\\s`).",
+            "examples": ["^\\s*@", "^\\s*#\\["]
           },
           "blockComments": {
             "type": "boolean",
-            "description": "Blank `/* ... */` comments before scanning, so commented-out tests are not detected."
+            "description": "Ignore /* ... */ comments when looking for cases, so commented-out tests are not detected.\n\nDefault: false",
+            "markdownDescription": "Ignore `/* ... */` comments when looking for cases, so commented-out tests are not detected.\n\nDefault: `false`",
+            "default": false
           },
           "blocks": {
             "type": "string",
             "enum": ["braces", "indent"],
-            "description": "How a case's last line is found: balanced `()`/`{}`, or indentation (Python). Unset: the agent reports it."
+            "enumDescriptions": [
+              "The case ends where its ()/{} brackets balance again.",
+              "The case ends before the next line indented at or above it (Python)."
+            ],
+            "markdownEnumDescriptions": [
+              "The case ends where its `()`/`{}` brackets balance again.",
+              "The case ends before the next line indented at or above it (Python)."
+            ],
+            "description": "How to find a case's last line. Unset: agents report it, and tests-diet delete leaves those cases to an agent.",
+            "markdownDescription": "How to find a case's last line. Unset: agents report it, and `tests-diet delete` leaves those cases to an agent."
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "How to recognize the test files and test cases of one language.",
+        "markdownDescription": "How to recognize the test files and test cases of one language."
       },
-      "description": "Languages checked before the defaults (the first matching language wins)."
-    },
-    "include": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "Only files matching one of these globs are considered."
-    },
-    "exclude": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "Added to the default excludes (node_modules, dist, build, target, virtual environments, ...)."
-    },
-    "budget": {
-      "type": "integer",
-      "minimum": 1,
-      "description": "Target tokens of test code per group.",
-      "default": 50000
-    },
-    "minGroup": {
-      "type": "integer",
-      "minimum": 1,
-      "description": "Groups smaller than this are merged with neighbors when possible.",
-      "default": 15000
-    },
-    "tolerance": {
-      "type": "number",
-      "minimum": 0,
-      "description": "Allowed overshoot over `budget`, as a fraction.",
-      "default": 0.1
-    },
-    "outDir": {
-      "type": "string",
-      "description": "Directory for state, sessions and reports, relative to the root.",
-      "default": ".tests-diet"
-    },
-    "model": {
-      "type": "string",
-      "description": "Model pattern resolved through your pi config, e.g. `claude-haiku-5-5` or `provider/id:low`."
-    },
-    "thinking": {
-      "type": "string",
-      "enum": ["off", "minimal", "low", "medium", "high", "xhigh", "max"],
-      "description": "Thinking level of the agents.",
-      "default": "low"
-    },
-    "concurrency": {
-      "type": "integer",
-      "minimum": 1,
-      "description": "Maximum parallel agents; never more than there are groups.",
-      "default": 32
-    },
-    "instructions": {
-      "type": "string",
-      "description": "Markdown file with repository-specific rules appended to the rubric, relative to the root."
-    },
-    "maxRejections": {
-      "type": "integer",
-      "minimum": 1,
-      "description": "Rejected `submit_file_report` calls tolerated per file before it is marked failed.",
-      "default": 3
-    },
-    "maxIdleTurns": {
-      "type": "integer",
-      "minimum": 1,
-      "description": "Model turns without an accepted report before the group's session is aborted.",
-      "default": 25
-    },
-    "agentDir": {
-      "type": "string",
-      "description": "pi config directory for the pool (settings, auth, models, packages). Default: pi's own."
+      "description": "Languages checked before the built-in ones, so they can also override one for the same files. Changing discovery settings needs --replan.\n\nCLI: --match <glob[:regex]>, --case-start <regex>",
+      "markdownDescription": "Languages checked before the built-in ones, so they can also override one for the same files. Changing discovery settings needs `--replan`.\n\nCLI: `--match <glob[:regex]>, --case-start <regex>`"
     },
     "mcpServers": {
       "type": "object",
       "patternProperties": {
         "^.*$": {
           "type": "object",
-          "properties": {},
-          "additionalProperties": true
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "URL of an HTTP (streamable) MCP server.",
+              "markdownDescription": "URL of an HTTP (streamable) MCP server.",
+              "examples": ["http://localhost:9121/mcp"]
+            },
+            "headers": {
+              "type": "object",
+              "patternProperties": {
+                "^.*$": {
+                  "type": "string",
+                  "description": "Header value. May reference environment variables (${NAME}) or commands (!cmd).",
+                  "markdownDescription": "Header value. May reference environment variables (`${NAME}`) or commands (`!cmd`)."
+                }
+              },
+              "description": "HTTP headers sent to the server.",
+              "markdownDescription": "HTTP headers sent to the server."
+            },
+            "command": {
+              "type": "string",
+              "description": "Command that starts a stdio MCP server.",
+              "markdownDescription": "Command that starts a stdio MCP server.",
+              "examples": ["uvx"]
+            },
+            "args": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "description": "One argument.",
+                "markdownDescription": "One argument."
+              },
+              "description": "Arguments of command.",
+              "markdownDescription": "Arguments of `command`."
+            },
+            "env": {
+              "type": "object",
+              "patternProperties": {
+                "^.*$": {
+                  "type": "string",
+                  "description": "Variable value. May reference environment variables (${NAME}) or commands (!cmd).",
+                  "markdownDescription": "Variable value. May reference environment variables (`${NAME}`) or commands (`!cmd`)."
+                }
+              },
+              "description": "Environment of command.",
+              "markdownDescription": "Environment of `command`."
+            },
+            "cwd": {
+              "type": "string",
+              "description": "Working directory of command.",
+              "markdownDescription": "Working directory of `command`."
+            },
+            "exposure": {
+              "type": "string",
+              "enum": ["direct", "deferred", "codemode", "hidden"],
+              "enumDescriptions": [
+                "Tools are declared to the model like any other tool. Keeps the tool list identical across agents.",
+                "Tools are declared only after the model loads them with tool search.",
+                "Tools are callable only from codemode scripts.",
+                "Tools are registered but unreachable."
+              ],
+              "markdownEnumDescriptions": [
+                "Tools are declared to the model like any other tool. Keeps the tool list identical across agents.",
+                "Tools are declared only after the model loads them with tool search.",
+                "Tools are callable only from codemode scripts.",
+                "Tools are registered but unreachable."
+              ],
+              "description": "How the server's tools reach the model.\n\nDefault: \"direct\"",
+              "markdownDescription": "How the server's tools reach the model.\n\nDefault: `\"direct\"`",
+              "default": "direct"
+            },
+            "enabled": {
+              "type": "boolean",
+              "description": "Set to false to keep the entry without connecting.\n\nDefault: true",
+              "markdownDescription": "Set to `false` to keep the entry without connecting.\n\nDefault: `true`",
+              "default": true
+            },
+            "timeout": {
+              "type": "number",
+              "description": "Per-request timeout in seconds.\n\nDefault: 60",
+              "markdownDescription": "Per-request timeout in seconds.\n\nDefault: `60`",
+              "default": 60
+            }
+          },
+          "additionalProperties": true,
+          "description": "One MCP server, in pi's mcp.json format: url for an HTTP server, or command and args for a stdio one.",
+          "markdownDescription": "One MCP server, in pi's `mcp.json` format: `url` for an HTTP server, or `command` and `args` for a stdio one."
         }
       },
-      "description": "MCP servers for the pool only, in pi's `mcp.json` format (`command`/`args` or `url`). Exposure defaults to `direct`; their tools still need to be listed in `tools`."
+      "description": "MCP servers for the agents only; your personal mcp.json is not loaded. Their tools must also be listed in tools. See Serena for a recommended setup.\n\nCLI: --mcp-config <file>",
+      "markdownDescription": "MCP servers for the agents only; your personal `mcp.json` is not loaded. Their tools must also be listed in `tools`. See [Serena](https://github.com/arthurfiorette/tests-diet#recommended-serena) for a recommended setup.\n\nCLI: `--mcp-config <file>`",
+      "examples": [
+        {
+          "serena": {
+            "url": "http://localhost:9121/mcp"
+          }
+        }
+      ]
     },
     "tools": {
       "type": "array",
       "items": {
-        "type": "string"
+        "type": "string",
+        "description": "A tool name, or a pattern where * matches any characters.",
+        "markdownDescription": "A tool name, or a pattern where `*` matches any characters."
       },
-      "description": "Extra tool names or patterns the agents may call, e.g. `mcp__serena__find_symbol`."
+      "description": "Extra tools the agents may call. read, grep, find and ls are always available. Never allow tools that edit files.\n\nCLI: --tools",
+      "markdownDescription": "Extra tools the agents may call. `read`, `grep`, `find` and `ls` are always available. Never allow tools that edit files.\n\nCLI: `--tools`",
+      "examples": [["mcp__serena__find_symbol", "mcp__serena__find_referencing_symbols"]]
     },
     "extensions": {
       "type": "array",
       "items": {
-        "type": "string"
+        "type": "string",
+        "description": "Path to a pi extension file, relative to the project root.",
+        "markdownDescription": "Path to a pi extension file, relative to the project root."
       },
-      "description": "Extra pi extension files loaded in every agent session."
+      "description": "Extra pi extensions loaded in every agent session.\n\nCLI: --extension",
+      "markdownDescription": "Extra pi extensions loaded in every agent session.\n\nCLI: `--extension`"
+    },
+    "agentDir": {
+      "type": "string",
+      "description": "pi config directory for the agents: settings, credentials, models and packages. Unset: pi's own (~/.pi/agent).\n\nCLI: --agent-dir",
+      "markdownDescription": "pi config directory for the agents: settings, credentials, models and packages. Unset: pi's own (`~/.pi/agent`).\n\nCLI: `--agent-dir`"
     },
     "trustProject": {
       "type": "boolean",
-      "description": "Load the audited project's `.pi` settings, packages and extensions.",
+      "description": "Load the audited project's .pi settings, packages and extensions. Off by default, so the audited code cannot change how the agents run.\n\nCLI: --trust-project · Default: false",
+      "markdownDescription": "Load the audited project's `.pi` settings, packages and extensions. Off by default, so the audited code cannot change how the agents run.\n\nCLI: `--trust-project` · Default: `false`",
       "default": false
+    },
+    "maxRejections": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Rejected reports tolerated per file before the file is marked failed.\n\nDefault: 3",
+      "markdownDescription": "Rejected reports tolerated per file before the file is marked failed.\n\nDefault: `3`",
+      "default": 3
+    },
+    "maxIdleTurns": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Agent turns without an accepted report before the group's session is stopped.\n\nDefault: 25",
+      "markdownDescription": "Agent turns without an accepted report before the group's session is stopped.\n\nDefault: `25`",
+      "default": 25
     },
     "transport": {
       "type": "string",
       "enum": ["auto", "sse", "websocket", "websocket-cached"],
-      "description": "Provider transport for the pool.",
+      "enumDescriptions": [
+        "The provider's choice.",
+        "Server-sent events over HTTP. The most reliable for long unattended runs.",
+        "A WebSocket per session. Long runs saw frequent \"WebSocket closed\" errors, each costing a retry.",
+        "pi's cached WebSocket variant, for providers that support it."
+      ],
+      "markdownEnumDescriptions": [
+        "The provider's choice.",
+        "Server-sent events over HTTP. The most reliable for long unattended runs.",
+        "A WebSocket per session. Long runs saw frequent \"WebSocket closed\" errors, each costing a retry.",
+        "pi's cached WebSocket variant, for providers that support it."
+      ],
+      "description": "Provider transport for the agents.\n\nDefault: \"sse\"",
+      "markdownDescription": "Provider transport for the agents.\n\nDefault: `\"sse\"`",
       "default": "sse"
     }
   },
   "$id": "https://arthur.run/tests-diet/schema.json",
   "title": "tests-diet config",
-  "description": "Settings for tests-diet, read from tests-diet.config.json at the project root. CLI flags win.",
-  "additionalProperties": false
+  "additionalProperties": false,
+  "description": "Settings for tests-diet, read from tests-diet.config.json at the project root. Command-line flags override them for one run.",
+  "markdownDescription": "Settings for [tests-diet](https://github.com/arthurfiorette/tests-diet#readme), read from `tests-diet.config.json` at the project root. Command-line flags override them for one run."
 }
