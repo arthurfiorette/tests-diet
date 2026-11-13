@@ -43,7 +43,7 @@
     "test-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@earendil-works/pi-coding-agent": "1.4.0",
+    "@earendil-works/pi-coding-agent": "1.5.2",
     "@kitajs/html": "^4.2.13",
     "ignore": "^7.0.14",
     "picomatch": "^4.0.7",
