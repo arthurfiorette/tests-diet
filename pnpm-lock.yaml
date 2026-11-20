@@ -174,7 +174,7 @@ importers:
         version: 4.2.13
       ignore:
         specifier: ^7.0.14
-        version: 7.0.14
+        version: 7.0.16
       picomatch:
         specifier: ^4.0.7
         version: 4.0.7
@@ -886,8 +886,8 @@ packages:
     resolution: {integrity: sha512-ag87y7cJJ9/3+GxFr8Oy4O5faDsGRGnBGsJj/YjOSsSx/5eadKLYTMPlzuR6obgoCDDm0abAAZitXXQkMOPSpA==}
     engines: {node: '>= 20'}
 
-  ignore@7.0.14:
-    resolution: {integrity: sha512-wCBiZ77u1tuWde6G/nfOtLaCTYcFDU5yCzARzK10y+rLhzYoL7a7yEemcopcc2Mzow7gZOIjnV2ym1NYmdiJOQ==}
+  ignore@7.0.16:
+    resolution: {integrity: sha512-52N+Y4HRMOJmbLmr+DqO4iSRyyB7N52gm7PWCT6h0p978+oKbqHCB7gIJIwZvBUsjlSdWbrBFqUSmIFNZMpn0A==}
     engines: {node: '>= 4'}
 
   ignore@7.0.8:
@@ -1796,7 +1796,7 @@ snapshots:
       - kerberos
       - supports-color
 
-  ignore@7.0.14: {}
+  ignore@7.0.16: {}
 
   ignore@7.0.8: {}
 
